@@ -5,6 +5,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("WorthwhileKnockdowns Mod for Battletech by Harebrained Schemes")]
 [assembly: AssemblyProduct("WorthwhileKnockdowns")]
 [assembly: ComVisible(false)]
-[assembly: Guid("5B8A6742-DE73-4450-A1BE-F40FD106C8C7")]
-[assembly: AssemblyVersion("1.3.1.*")]
+[assembly: Guid("4CC1D6FB-85F0-4AFA-BC2E-D77786EE2F8F")]
+[assembly: AssemblyVersion("1.3.2.*")]
 
