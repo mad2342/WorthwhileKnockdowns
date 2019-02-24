@@ -16,7 +16,7 @@ namespace WorthwhileKnockdowns
         public static string ModDirectory;
 
         // BEN: Debug (0: nothing, 1: errors, 2:all)
-        internal static int DebugLevel = 1;
+        internal static int DebugLevel = 2;
 
         public static void Init(string directory, string settings)
         {
@@ -36,13 +36,13 @@ namespace WorthwhileKnockdowns
         public static void Postfix(Mech __instance, ref bool __result)
         {
             bool MechStoodUpThisRound = __instance.StoodUpThisRound;
-            Logger.LogLine("[Mech_CanSprint_POSTFIX] MechStoodUpThisRound: " + MechStoodUpThisRound);
 
             if (__result == true)
             {
                 // Additional check
                 if (MechStoodUpThisRound)
                 {
+                    //Logger.LogLine("[Mech_CanSprint_POSTFIX] Mech COULD sprint BUT just stood up, thus returning false.");
                     __result = false;
                 }
             }
@@ -75,13 +75,13 @@ namespace WorthwhileKnockdowns
         public static void Postfix(AbstractActor __instance, ref int __result)
         {
             bool ActorStoodUpThisRound = __instance.StoodUpThisRound;
-            Logger.LogLine("[AbstractActor_WorkingJumpjets_POSTFIX] ActorStoodUpThisRound: " + ActorStoodUpThisRound);
 
             if (__result > 0)
             {
                 // Additional check
                 if (ActorStoodUpThisRound)
                 {
+                    //Logger.LogLine("[AbstractActor_WorkingJumpjets_POSTFIX] Mech HAS working jumpjets installed BUT just stood up, reporting zero working jumpjets to temporarily disable his jumping capability.");
                     __result = 0;
                 }
             }
