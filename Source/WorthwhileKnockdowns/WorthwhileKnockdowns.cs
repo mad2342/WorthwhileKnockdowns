@@ -95,9 +95,11 @@ namespace WorthwhileKnockdowns
         {
             try
             {
+                Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] SelectionType: " + SelectionType);
+
                 // THROWS EXCEPTION if there any empty ability slots(SelectionType.None) in MWTray!
                 // Thus returning early here for all non-relevant SelectionTypes
-                if (SelectionType != SelectionType.Sprint || SelectionType != SelectionType.Jump)
+                if (!(SelectionType == SelectionType.Sprint || SelectionType == SelectionType.Jump))
                 {
                     return;
                 }
