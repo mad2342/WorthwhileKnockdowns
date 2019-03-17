@@ -95,6 +95,7 @@ namespace WorthwhileKnockdowns
         {
             try
             {
+                Logger.LogLine("----------------------------------------------------------------------------------------------------");
                 Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] SelectionType: " + SelectionType);
 
                 // THROWS EXCEPTION if there any empty ability slots(SelectionType.None) in MWTray!
@@ -115,6 +116,9 @@ namespace WorthwhileKnockdowns
                 if (SelectionType == SelectionType.Sprint)
                 {
                     Mech mech = actor as Mech;
+                    Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] mech.IsLegged: " + mech.IsLegged);
+                    Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] mech.IsUnsteady: " + mech.IsUnsteady);
+
                     // Added check for prone as warning doesn't make sense if unit is still down. At that moment buttons are still disabled anyway...
                     if (mech != null && !actor.CanSprint && !ActorIsProne)
                     {
