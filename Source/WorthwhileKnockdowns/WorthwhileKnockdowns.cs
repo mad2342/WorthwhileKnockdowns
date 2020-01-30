@@ -6,29 +6,30 @@ using BattleTech.UI;
 using Localize;
 using System;
 
-
-
 namespace WorthwhileKnockdowns
 {
     public class WorthwhileKnockdowns
     {
-        public static string LogPath;
-        public static string ModDirectory;
+        internal static string LogPath;
+        internal static string ModDirectory;
 
-        // BEN: Debug (0: nothing, 1: errors, 2:all)
-        internal static int DebugLevel = 1;
+        // BEN: DebugLevel (0: nothing, 1: error, 2: debug, 3: info)
+        internal static int DebugLevel = 2;
 
         public static void Init(string directory, string settings)
         {
             ModDirectory = directory;
-
             LogPath = Path.Combine(ModDirectory, "WorthwhileKnockdowns.log");
-            File.CreateText(WorthwhileKnockdowns.LogPath);
 
-            var harmony = HarmonyInstance.Create("de.mad.WorthwhileKnockdowns");
+            Logger.Initialize(LogPath, DebugLevel, ModDirectory, nameof(WorthwhileKnockdowns));
+
+            // Harmony calls need to go last here because their Prepare() methods directly check Settings...
+            HarmonyInstance harmony = HarmonyInstance.Create("de.mad.WorthwhileKnockdowns");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
     }
+
+
 
     [HarmonyPatch(typeof(Mech), nameof(Mech.CanSprint), MethodType.Getter)]
     public static class Mech_CanSprint_Patch
@@ -42,7 +43,7 @@ namespace WorthwhileKnockdowns
                 // Additional check
                 if (MechStoodUpThisRound)
                 {
-                    //Logger.LogLine("[Mech_CanSprint_POSTFIX] Mech COULD sprint BUT just stood up, thus returning false.");
+                    Logger.Info("[Mech_CanSprint_POSTFIX] Mech COULD sprint BUT just stood up, thus returning false.");
                     __result = false;
                 }
             }
@@ -81,7 +82,7 @@ namespace WorthwhileKnockdowns
                 // Additional check
                 if (ActorStoodUpThisRound)
                 {
-                    //Logger.LogLine("[AbstractActor_WorkingJumpjets_POSTFIX] Mech HAS working jumpjets installed BUT just stood up, reporting zero working jumpjets to temporarily disable his jumping capability.");
+                    Logger.Info("[AbstractActor_WorkingJumpjets_POSTFIX] Mech HAS working jumpjets installed BUT just stood up, reporting zero working jumpjets to temporarily disable his jumping capability.");
                     __result = 0;
                 }
             }
@@ -95,8 +96,7 @@ namespace WorthwhileKnockdowns
         {
             try
             {
-                Logger.LogLine("----------------------------------------------------------------------------------------------------");
-                Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] SelectionType: " + SelectionType);
+                Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] SelectionType: " + SelectionType);
 
                 // THROWS EXCEPTION if there any empty ability slots(SelectionType.None) in MWTray!
                 // Thus returning early here for all non-relevant SelectionTypes
@@ -106,9 +106,9 @@ namespace WorthwhileKnockdowns
                 }
 
                 bool ActorIsProne = actor.IsProne;
-                Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] ActorIsProne: " + ActorIsProne);
+                Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] ActorIsProne: " + ActorIsProne);
                 bool ActorStoodUpThisRound = actor.StoodUpThisRound;
-                Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] ActorStoodUpThisRound: " + ActorStoodUpThisRound);
+                Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] ActorStoodUpThisRound: " + ActorStoodUpThisRound);
 
                 // Reset Text
                 __instance.WarningText = new Text();
@@ -116,8 +116,8 @@ namespace WorthwhileKnockdowns
                 if (SelectionType == SelectionType.Sprint)
                 {
                     Mech mech = actor as Mech;
-                    Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] mech.IsLegged: " + mech.IsLegged);
-                    Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] mech.IsUnsteady: " + mech.IsUnsteady);
+                    Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] mech.IsLegged: " + mech.IsLegged);
+                    Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] mech.IsUnsteady: " + mech.IsUnsteady);
 
                     // Added check for prone as warning doesn't make sense if unit is still down. At that moment buttons are still disabled anyway...
                     if (mech != null && !actor.CanSprint && !ActorIsProne)
@@ -143,7 +143,7 @@ namespace WorthwhileKnockdowns
                 {
                     // Only add warning text if it makes sense. For mechs that doesn't even have JJs installed a warning is not sensible
                     bool ActorHasJumpjetsInstalled = actor.jumpjets.Count > 0;
-                    Logger.LogLine("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] ActorHasJumpjetsInstalled: " + ActorHasJumpjetsInstalled);
+                    Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] ActorHasJumpjetsInstalled: " + ActorHasJumpjetsInstalled);
 
                     // Added check for prone as warning doesn't make sense if unit is still down. At that moment buttons are still disabled anyway...
                     if (ActorHasJumpjetsInstalled && !ActorIsProne)
