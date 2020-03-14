@@ -5,6 +5,7 @@ using System.IO;
 using BattleTech.UI;
 using Localize;
 using System;
+using Newtonsoft.Json;
 
 namespace WorthwhileKnockdowns
 {
@@ -12,6 +13,7 @@ namespace WorthwhileKnockdowns
     {
         internal static string LogPath;
         internal static string ModDirectory;
+        internal static Settings Settings;
 
         // BEN: DebugLevel (0: nothing, 1: error, 2: debug, 3: info)
         internal static int DebugLevel = 1;
@@ -23,6 +25,16 @@ namespace WorthwhileKnockdowns
 
             Logger.Initialize(LogPath, DebugLevel, ModDirectory, nameof(WorthwhileKnockdowns));
 
+            try
+            {
+                Settings = JsonConvert.DeserializeObject<Settings>(settings);
+            }
+            catch (Exception e)
+            {
+                Settings = new Settings();
+                Logger.Error(e);
+            }
+
             // Harmony calls need to go last here because their Prepare() methods directly check Settings...
             HarmonyInstance harmony = HarmonyInstance.Create("de.mad.WorthwhileKnockdowns");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
@@ -31,9 +43,15 @@ namespace WorthwhileKnockdowns
 
 
 
+    // Sprint
     [HarmonyPatch(typeof(Mech), nameof(Mech.CanSprint), MethodType.Getter)]
     public static class Mech_CanSprint_Patch
     {
+        public static bool Prepare()
+        {
+            return WorthwhileKnockdowns.Settings.KnockdownPreventsSprinting;
+        }
+
         public static void Postfix(Mech __instance, ref bool __result)
         {
             bool MechStoodUpThisRound = __instance.StoodUpThisRound;
@@ -50,29 +68,17 @@ namespace WorthwhileKnockdowns
         }
     }
 
-    /*
-    [HarmonyPatch(typeof(Mech), nameof(Mech.JumpDistance), MethodType.Getter)]
-    public static class Mech_JumpDistance_Patch
-    {
-        public static void Postfix(Mech __instance, ref float __result)
-        {
-            bool MechStoodUpThisRound = __instance.StoodUpThisRound;
 
-            if (__result > 0f)
-            {
-                // Additional check
-                if (MechStoodUpThisRound)
-                {
-                    __result = 0f;
-                }
-            }
-        }
-    }
-    */
 
+    // Jump
     [HarmonyPatch(typeof(AbstractActor), nameof(AbstractActor.WorkingJumpjets), MethodType.Getter)]
     public static class AbstractActor_WorkingJumpjets_Patch
     {
+        public static bool Prepare()
+        {
+            return WorthwhileKnockdowns.Settings.KnockdownPreventsJumping;
+        }
+
         public static void Postfix(AbstractActor __instance, ref int __result)
         {
             bool ActorStoodUpThisRound = __instance.StoodUpThisRound;
@@ -89,6 +95,9 @@ namespace WorthwhileKnockdowns
         }
     }
 
+
+
+    // UI
     [HarmonyPatch(typeof(CombatHUDSidePanelHoverElement), "InitForSelectionState")]
     public static class CombatHUDSidePanelHoverElement_InitForSelectionState_Patch
     {
@@ -119,6 +128,12 @@ namespace WorthwhileKnockdowns
                     Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] mech.IsLegged: " + mech.IsLegged);
                     Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] mech.IsUnsteady: " + mech.IsUnsteady);
 
+                    if (mech != null && WorthwhileKnockdowns.Settings.KnockdownPreventsSprinting)
+                    {
+                        __instance.Description = new Text();
+                        __instance.Description = new Text("Use this 'Mech's entire turn to move farther, gaining EVASIVE charges based on distance(+2 Difficulty to hit this unit with ranged attacks per EVASIVE charge). Cannot Sprint if LEGGED, UNSTEADY, or just recovered from a KNOCKDOWN.", new object[0]);
+                    }
+
                     // Added check for prone as warning doesn't make sense if unit is still down. At that moment buttons are still disabled anyway...
                     if (mech != null && !actor.CanSprint && !ActorIsProne)
                     {
@@ -128,7 +143,7 @@ namespace WorthwhileKnockdowns
                             __instance.WarningText = new Text("UNAVAILABLE - DESTROYED LEG PREVENTS SPRINTING", new object[0]);
                         }
                         // BEN: Added
-                        else if (ActorStoodUpThisRound)
+                        else if (ActorStoodUpThisRound && WorthwhileKnockdowns.Settings.KnockdownPreventsSprinting)
                         {
                             __instance.WarningText = new Text("UNAVAILABLE - RECENTLY KNOCKED DOWN UNITS CANNOT SPRINT", new object[0]);
                         }
@@ -141,6 +156,12 @@ namespace WorthwhileKnockdowns
                 }
                 else if (SelectionType == SelectionType.Jump)
                 {
+                    if (WorthwhileKnockdowns.Settings.KnockdownPreventsJumping)
+                    {
+                        __instance.Description = new Text();
+                        __instance.Description = new Text("Execute a jump move, gaining EVASIVE charges based on distance (+2 Difficulty to hit this unit with ranged attacks per EVASIVE charge). You may also use Jump to initiate a 'Death from Above' attack on nearby enemies. Cannot Jump with all Jumpjets destroyed or if just recovered from a KNOCKDOWN.", new object[0]);
+                    }
+
                     // Only add warning text if it makes sense. For mechs that doesn't even have JJs installed a warning is not sensible
                     bool ActorHasJumpjetsInstalled = actor.jumpjets.Count > 0;
                     Logger.Info("[CombatHUDSidePanelHoverElement_InitForSelectionState_POSTFIX] ActorHasJumpjetsInstalled: " + ActorHasJumpjetsInstalled);
@@ -148,7 +169,7 @@ namespace WorthwhileKnockdowns
                     // Added check for prone as warning doesn't make sense if unit is still down. At that moment buttons are still disabled anyway...
                     if (ActorHasJumpjetsInstalled && !ActorIsProne)
                     {
-                        if (ActorStoodUpThisRound)
+                        if (ActorStoodUpThisRound && WorthwhileKnockdowns.Settings.KnockdownPreventsJumping)
                         {
                             __instance.WarningText = new Text("UNAVAILABLE - RECENTLY KNOCKED DOWN UNITS CANNOT JUMP", new object[0]);
                         }
