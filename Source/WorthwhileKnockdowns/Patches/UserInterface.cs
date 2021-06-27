@@ -8,8 +8,8 @@ namespace WorthwhileKnockdowns.Patches
 {
     class UserInterface
     {
-        internal static string SprintDescription = "Use this 'Mech's entire turn to move farther, gaining EVASIVE charges based on distance(+2 Difficulty to hit this unit with ranged attacks per EVASIVE charge). Cannot Sprint if LEGGED, UNSTEADY, or just recovered from a KNOCKDOWN.";
-        internal static string JumpDescription = "Execute a jump move, gaining EVASIVE charges based on distance (+2 Difficulty to hit this unit with ranged attacks per EVASIVE charge). You may also use Jump to initiate a 'Death from Above' attack on nearby enemies. Cannot Jump with all jumpjets destroyed or if just recovered from a KNOCKDOWN.";
+        internal static string SprintDescriptionHint = "\nCannot sprint if LEGGED, UNSTEADY, or just recovered from a KNOCKDOWN.";
+        internal static string JumpDescriptionHint = "\nCannot jump with all jumpjets destroyed or if just recovered from a KNOCKDOWN.";
 
         [HarmonyPatch(typeof(CombatHUDSidePanelHoverElement), "InitForSelectionState")]
         public static class CombatHUDSidePanelHoverElement_InitForSelectionState_Patch
@@ -32,11 +32,13 @@ namespace WorthwhileKnockdowns.Patches
                     // Always change description according to settings
                     if (SelectionType == SelectionType.Sprint && WorthwhileKnockdowns.Settings.KnockdownPreventsSprinting)
                     {
-                        __instance.Description = new Text(SprintDescription, new object[0]);
+                        //__instance.Description = new Text(SprintDescription, new object[0]);
+                        __instance.Description.Append(SprintDescriptionHint, new object[0]);
                     }
                     if (SelectionType == SelectionType.Jump && WorthwhileKnockdowns.Settings.KnockdownPreventsJumping)
                     {
-                        __instance.Description = new Text(JumpDescription, new object[0]);
+                        //__instance.Description = new Text(JumpDescription, new object[0]);
+                        __instance.Description.Append(JumpDescriptionHint, new object[0]);
                     }
 
                     // Always clear warnings
